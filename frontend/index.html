@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Grounding Layer AI Assistant. Dynamically intercepts high-assumption prompts to prompt grounding context verification, enhancing trust and precision." />
+    <title>Grounding AI Assistant | Context Alignment Layer</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Google Fonts & Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+
+    <style>
+      .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+          display: inline-block;
+          line-height: 1;
+          text-transform: none;
+          letter-spacing: normal;
+          word-wrap: normal;
+          white-space: nowrap;
+          direction: ltr;
+      }
+    </style>
+
+    <!-- Tailwind Theme Configuration -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#ffffff",
+                        "on-surface-variant": "#4c4546",
+                        "tertiary-container": "#1b1b1b",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#e2e2e2",
+                        "inverse-on-surface": "#f1f1f1",
+                        "outline-variant": "#cfc4c5",
+                        "on-background": "#1a1c1c",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#4edea3",
+                        "inverse-primary": "#c6c6c6",
+                        "on-secondary-container": "#00714d",
+                        "surface-variant": "#e2e2e2",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#5e5e5e",
+                        "on-primary": "#ffffff",
+                        "primary": "#000000",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9f9",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "background": "#f9f9f9",
+                        "surface-container-low": "#f4f3f3",
+                        "surface-dim": "#dadada",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-tertiary-container": "#848484",
+                        "on-primary-container": "#848484",
+                        "tertiary-fixed": "#e2e2e2",
+                        "on-primary-fixed-variant": "#474747",
+                        "outline": "#e5e5e5",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "secondary-fixed": "#6ffbbe",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eeeeee",
+                        "secondary": "#006c49",
+                        "surface-container-highest": "#e2e2e2",
+                        "secondary-container": "#6cf8bb",
+                        "primary-container": "#1b1b1b",
+                        "on-error": "#ffffff",
+                        "tertiary": "#000000",
+                        "inverse-surface": "#2f3131",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "on-secondary-fixed": "#002113",
+                        "on-primary-fixed": "#1b1b1b",
+                        "surface-container-high": "#e8e8e8",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-secondary": "#ffffff",
+                        "chatgpt-green": "#10a37f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "2rem",
+                        "margin-mobile": "1rem",
+                        "gutter": "1.5rem",
+                        "sidebar-width": "260px",
+                        "container-max-width": "768px"
+                    }
+                },
+            },
+        }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
