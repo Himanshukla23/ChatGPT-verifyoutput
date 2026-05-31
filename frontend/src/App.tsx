@@ -4,7 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { GroundingWorkspace } from './components/GroundingWorkspace';
 import { InsightsDrawer } from './components/InsightsDrawer';
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 function App() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
