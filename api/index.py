@@ -19,7 +19,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -50,7 +50,9 @@ class GenerateResponse(BaseModel):
 
 # --- Endpoints ---
 
+@app.get("/", tags=["Diagnostics"])
 @app.get("/health", tags=["Diagnostics"])
+@app.get("/api", tags=["Diagnostics"])
 @app.get("/api/health", tags=["Diagnostics"])
 def health_check():
     """Returns api health details."""
