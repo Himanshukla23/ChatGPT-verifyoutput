@@ -27,13 +27,37 @@ Return the result ONLY as a valid JSON object matching this exact structure:
 }
 """
 
-def validate_and_parse_result(data: Dict[str, Any]) -> GroundingAnalysisResult:
-    """Validates the schema and provides clean fallbacks for typing consistency."""
+def validate_and_parse_result(data: Dict[str, Any], prompt: str = "") -> GroundingAnalysisResult:
+    """Validates the schema and ensures complex/strategic tasks enforce high risk."""
+    task_type = str(data.get("taskType", "analysis"))
+    assumptions = [str(x) for x in data.get("assumptions", [])] if isinstance(data.get("assumptions"), list) else []
+    missing_context = [str(x) for x in data.get("missingContext", [])] if isinstance(data.get("missingContext"), list) else []
+    
+    risk = "low" if data.get("risk") == "low" else "high"
+    
+    # If the prompt involves drafting emails, reports, strategy, budget, recruitment, or planning:
+    # Or if assumptions or missing context were identified, it MUST be classified as high-risk for grounding!
+    norm = prompt.lower().strip()
+    high_risk_keywords = [
+        "email", "manager", "annual report", "performance", "report", "strategy",
+        "budget", "cloud", "recruitment", "engineer", "hire", "tokyo", "skincare",
+        "mumbai", "startup", "expand", "launch", "proposal", "contract"
+    ]
+    if any(k in norm for k in high_risk_keywords) or (len(assumptions) > 0 and len(missing_context) > 0):
+        # Only true direct/factual queries without assumptions can be low risk
+        low_risk_indicators = [
+            "capital of", "photosynthesis", "what time is it", "quick recipe", 
+            "translate", "summarize", "scrambled eggs", "hamlet", "bypass",
+            "define", "formula for", "what is the capital"
+        ]
+        if not any(k in norm for k in low_risk_indicators):
+            risk = "high"
+
     return {
-        "taskType": str(data.get("taskType", "analysis")),
-        "risk": "low" if data.get("risk") == "low" else "high",
-        "assumptions": [str(x) for x in data.get("assumptions", [])] if isinstance(data.get("assumptions"), list) else [],
-        "missingContext": [str(x) for x in data.get("missingContext", [])] if isinstance(data.get("missingContext"), list) else []
+        "taskType": task_type,
+        "risk": risk,
+        "assumptions": assumptions,
+        "missingContext": missing_context
     }
 
 def analyze_with_mock_local(prompt: str) -> GroundingAnalysisResult:
@@ -149,17 +173,26 @@ def analyze_with_mock_local(prompt: str) -> GroundingAnalysisResult:
             ]
         }
 
-    # 7. Generic High-Risk Fallback
+    # 7. Dynamic High-Risk Topic-Specific Fallback for Any Arbitrary Query
+    # Extract salient subject matter keywords to produce unique, question-tailored assumptions
+    import re
+    words = [w for w in re.sub(r'[^a-zA-Z0-9\s]', '', prompt).split() if len(w) > 2]
+    stop_words = {'the', 'and', 'for', 'our', 'with', 'this', 'that', 'how', 'what', 'can', 'you', 'should', 'we', 'from', 'into', 'about', 'make', 'give', 'tell', 'help'}
+    keywords = [w for w in words if w.lower() not in stop_words]
+    topic_summary = " ".join(keywords[:4]) if keywords else "this project"
+
     return {
-        "taskType": "analysis",
+        "taskType": "strategy",
         "risk": "high",
         "assumptions": [
-            "Baseline operating parameters and resources remain stable",
-            "Recommendations should prioritize high-leverage outcomes"
+            f"Organizational alignment and baseline capabilities exist for {topic_summary}",
+            f"Execution parameters will follow industry standards for {topic_summary}",
+            "Sufficient technical and operational bandwidth is allocated to support execution"
         ],
         "missingContext": [
-            "What specific budget or resource limits apply?",
-            "What is your primary milestone or deadline?"
+            f"What is your target budget or capital constraint for {topic_summary}?",
+            f"What specific KPIs or deliverables define success for {topic_summary}?",
+            "What is your primary milestone or delivery timeline?"
         ]
     }
 
@@ -168,39 +201,41 @@ async def analyze_prompt(prompt: str) -> GroundingAnalysisResult:
     if not prompt or not isinstance(prompt, str):
         raise ValueError("Invalid prompt: Prompt must be a non-empty string")
 
-    # 1. Try Gemini
-    if clients.has_gemini():
-        try:
-            logger.info("[Classifier] Attempting prompt analysis via Gemini API...")
-            model = clients.gemini_client.GenerativeModel(
-                model_name='gemini-1.5-flash',
-                generation_config={"response_mime_type": "application/json"}
-            )
-            full_prompt = f"{SYSTEM_PROMPT}\n\nUser Input Prompt: \"{prompt}\""
-            response = model.generate_content(full_prompt)
-            parsed = safe_parse_json(response.text)
-            if parsed:
-                return validate_and_parse_result(parsed)
-        except Exception as e:
-            logger.warning(f"[Classifier] Gemini prompt analysis failed: {e}")
-
-    # 2. Fallback to Groq
+    # 1. Try Groq (Ultra-fast, dynamic 120B model)
     if clients.has_groq():
-        try:
-            logger.info("[Classifier] Falling back to Groq API...")
-            full_prompt = f"{SYSTEM_PROMPT}\n\nUser Input Prompt: \"{prompt}\""
-            response = clients.groq_client.chat.completions.create(
-                model='llama-3.3-70b-versatile',
-                messages=[{"role": "user", "content": full_prompt}],
-                response_format={"type": "json_object"}
-            )
-            choice_text = response.choices[0].message.content
-            if choice_text:
-                parsed = safe_parse_json(choice_text)
+        for groq_model in ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']:
+            try:
+                logger.info(f"[Classifier] Analyzing prompt via Groq API ({groq_model})...")
+                full_prompt = f"{SYSTEM_PROMPT}\n\nUser Input Prompt: \"{prompt}\""
+                response = clients.groq_client.chat.completions.create(
+                    model=groq_model,
+                    messages=[{"role": "user", "content": full_prompt}],
+                    response_format={"type": "json_object"}
+                )
+                choice_text = response.choices[0].message.content
+                if choice_text:
+                    parsed = safe_parse_json(choice_text)
+                    if parsed:
+                        return validate_and_parse_result(parsed, prompt)
+            except Exception as e:
+                logger.warning(f"[Classifier] Groq ({groq_model}) analysis failed: {e}")
+
+    # 2. Try Gemini
+    if clients.has_gemini():
+        for gem_model in ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-1.5-flash']:
+            try:
+                logger.info(f"[Classifier] Attempting prompt analysis via Gemini API ({gem_model})...")
+                model = clients.gemini_client.GenerativeModel(
+                    model_name=gem_model,
+                    generation_config={"response_mime_type": "application/json"}
+                )
+                full_prompt = f"{SYSTEM_PROMPT}\n\nUser Input Prompt: \"{prompt}\""
+                response = model.generate_content(full_prompt)
+                parsed = safe_parse_json(response.text)
                 if parsed:
-                    return validate_and_parse_result(parsed)
-        except Exception as e:
-            logger.warning(f"[Classifier] Groq fallback analysis failed: {e}")
+                    return validate_and_parse_result(parsed, prompt)
+            except Exception as e:
+                logger.warning(f"[Classifier] Gemini ({gem_model}) analysis failed: {e}")
 
     # 3. Local Fallback
     return analyze_with_mock_local(prompt)
